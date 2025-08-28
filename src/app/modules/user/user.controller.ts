@@ -36,9 +36,23 @@ const updateUser = catchAsync(
     }
 );
 
+
+const updateUserProfile = catchAsync(async (req:Request, res:Response, next:NextFunction) => {
+    const userId = req.params.id;
+    const payload= req.body;
+    const decodedToken = req.user;
+    const user = await userServices.updateUserProfile(userId, payload, decodedToken as JwtPayload);
+    sendResponse(res, {
+        success:true,
+        statusCode:StatusCodes.OK,
+        message:'User Updated Successfully!',
+        data:user,
+    });
+});
+
 const getAllUser = catchAsync(async (req:Request, res:Response, next:NextFunction) => {
-   
-    const result = await userServices.getAllUser();
+    const decodedToken = req.user;
+    const result = await userServices.getAllUser(decodedToken as JwtPayload);
     sendResponse (res, {
         success:true,
         statusCode:StatusCodes.OK,
@@ -51,5 +65,6 @@ const getAllUser = catchAsync(async (req:Request, res:Response, next:NextFunctio
 export const userController = {
     createUser,
     getAllUser,
-    updateUser
+    updateUser,
+    updateUserProfile,
 }

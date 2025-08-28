@@ -68,9 +68,35 @@ const updateUser = async (userId:string,payload:Partial<IUser>,decodedUser: JwtP
     }
 };
 
+const updateUserProfile = async(userId:string, payload:Partial<IUser>, decodedUser:JwtPayload) => {
+    const isUserExist = await User.findById(userId);
 
-const getAllUser = async () => {
-    
+    if(!isUserExist){
+        throw new AppError(StatusCodes.NOT_FOUND, 'User Not Found');
+    }
+    if(isUserExist.role !== decodedUser.role){
+        throw new AppError(StatusCodes.BAD_REQUEST, "You are not authorized");
+    }
+    if(payload.password){
+        throw new AppError(StatusCodes.BAD_REQUEST, 'You are not allowed to update password here!');
+    }
+    if(payload.role){
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Only admin can update user roles.');
+    }
+    const newUpdatedProfile = await User.findByIdAndUpdate(userId, payload, {
+        new:true,
+        runValidators:true,
+    })
+    return newUpdatedProfile;
+}
+
+
+const getAllUser = async (decodedUser:JwtPayload) => {
+    const adminUser = await User.findById(decodedUser.userId);
+
+    if(!adminUser || adminUser.role !== Role.ADMIN){
+        throw new AppError(StatusCodes.FORBIDDEN, 'Only admin can access all users.');
+    }
     const users = await User.find({})
     const totalUser = await User.countDocuments()
     return{
@@ -84,5 +110,6 @@ const getAllUser = async () => {
 export const userServices = {
     createUser,
     getAllUser,
-    updateUser
+    updateUser,
+    updateUserProfile,
 }
