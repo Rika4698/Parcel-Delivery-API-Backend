@@ -2,6 +2,7 @@ import {Server} from "http";
 import mongoose from "mongoose";
 import app from "./app";
 import { envVars } from "./app/config/env";
+import { createAdmin } from "./app/utils/createAdmin";
 
 
 
@@ -22,6 +23,7 @@ const startServer = async () => {
 
 (async () => {
     await startServer();
+    await createAdmin();
 })();
 
 process.on('SIGTERM', () => {
