@@ -21,6 +21,7 @@ const createUser = catchAsync(
     }
 );
 
+
 const updateUser = catchAsync(
     async(req:Request, res:Response, next:NextFunction) => {
         const userId = req.params.id;
@@ -37,6 +38,7 @@ const updateUser = catchAsync(
 );
 
 
+
 const updateUserProfile = catchAsync(async (req:Request, res:Response, next:NextFunction) => {
     const userId = req.params.id;
     const payload= req.body;
@@ -45,14 +47,15 @@ const updateUserProfile = catchAsync(async (req:Request, res:Response, next:Next
     sendResponse(res, {
         success:true,
         statusCode:StatusCodes.OK,
-        message:'User Updated Successfully!',
+        message:'User Profile Updated Successfully!',
         data:user,
     });
 });
 
 const getAllUser = catchAsync(async (req:Request, res:Response, next:NextFunction) => {
     const decodedToken = req.user;
-    const result = await userServices.getAllUser(decodedToken as JwtPayload);
+    const query = req.query;
+    const result = await userServices.getAllUser(decodedToken as JwtPayload, query as Record<string, string>);
     sendResponse (res, {
         success:true,
         statusCode:StatusCodes.OK,
@@ -62,6 +65,8 @@ const getAllUser = catchAsync(async (req:Request, res:Response, next:NextFunctio
     });
 }
 );
+
+
 export const userController = {
     createUser,
     getAllUser,
