@@ -14,6 +14,7 @@ const authProviderSchema = new Schema<IsAuthProvider>(
     }
 );
 
+
 const userSchema = new Schema<IUser>(
     {
         name:{type: String, required:true},

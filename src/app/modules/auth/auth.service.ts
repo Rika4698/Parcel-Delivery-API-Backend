@@ -46,7 +46,7 @@ const changePassword = async(oldPassword:string, newPassword:string, decodedUser
 
     user!.password = await bcryptjs.hash(newPassword, envVars.BCRYPT_SALT_ROUND);
 
-    user!.save();
+    await user!.save();
 };
 
 
@@ -137,6 +137,18 @@ const resetPassword = async(payload: Record<string, any>, decodedUser:JwtPayload
     await isUserExist.save()
 };
 
+const getMe = async (decodedUser:JwtPayload) => {
+    const user = await User.findById(decodedUser.userId).select('-password')
+    .populate({
+        path:'Parcels',
+        select:'tracking fee receiverEmail statusHistory currentStatus parcelDetails'
+    });
+    if(!user){
+        throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
+    }
+    return user;
+}
+
 
 
 export const authServices = {
@@ -145,4 +157,5 @@ export const authServices = {
     setPassword,
     forgotPassword,
     resetPassword,
+    getMe,
 }

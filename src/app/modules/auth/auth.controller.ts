@@ -121,6 +121,19 @@ const resetPassword = catchAsync( async (req:Request, res:Response, next:NextFun
 
 
 
+const getMe = catchAsync(async(req:Request, res:Response, next:NextFunction) => {
+    const decodedUser = req.user;
+    const user = await authServices.getMe(decodedUser as JwtPayload);
+    sendResponse(res,{
+        success:true,
+        statusCode:StatusCodes.OK,
+        message:'Data received Successfully!',
+        data:user,
+    });
+});
+
+
+
 const googleCallbackController = catchAsync( async (req:Request, res:Response, next:NextFunction) => {
     let redirectTo = req.query.state ? (req.query.state as string) : '';
 
@@ -135,6 +148,7 @@ const googleCallbackController = catchAsync( async (req:Request, res:Response, n
     setAuthCookie(res, tokenInfo);
     res.redirect(`${envVars.FRONTEND_URL}/${redirectTo}`);
 });
+
 
 
 const logout = catchAsync(async (req:Request, res:Response, next:NextFunction) => {
@@ -157,6 +171,8 @@ const logout = catchAsync(async (req:Request, res:Response, next:NextFunction) =
     });
 });
 
+
+
 export const AuthController = {
     userLogin,
     getNewAccessToken,
@@ -166,5 +182,6 @@ export const AuthController = {
     changePassword,
     setPassword,
     forgotPassword,
+    getMe,
     
 };

@@ -21,8 +21,10 @@ export const checkAuth = (...authRole: string[]) => async (req:Request, res:Resp
         if(!accessToken){
             throw new AppError(StatusCodes.FORBIDDEN, 'No Token Received');
         }
+
         const decodedToken = verifyToken( accessToken, envVars.JWT_ACCESS_SECRET) as JwtPayload;
         const isUserExit = await User.findOne({email:decodedToken.email});
+        
         if(!isUserExit){
             throw new AppError(StatusCodes.BAD_REQUEST, 'User does not exist');
         }
