@@ -19,6 +19,8 @@ export const createParcelZodSchema = z.object({
         .min(1, 'Fee is required'),             
 });
 
+
+
 export const updateParcelZodSchema = z.object({
     receiverEmail:z
                   .string()
@@ -30,7 +32,11 @@ export const updateParcelZodSchema = z.object({
         phone:z.string().nonempty('Phone number is required').optional(),
         weight:z.number().positive('Weight must be positive').optional(),
         note:z.string().optional(),
-    }),              
+    }).optional(),
+    fee:z
+        .number()
+        .min(1, 'Fee is required')
+        .optional(),              
 });
 
 const ParcelStatusValues = Object.values(ParcelStatus) as [string, ...string[]];

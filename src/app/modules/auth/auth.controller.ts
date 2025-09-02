@@ -21,6 +21,7 @@ const userLogin = catchAsync(async (req:Request, res:Response, next:NextFunction
     passport.authenticate('local', async (err:any, user:any, info:any) => {
         if(err){
             console.log(err);
+
             return next(err);
         }
 
@@ -81,6 +82,9 @@ const changePassword = catchAsync( async (req:Request, res: Response, next:NextF
     });
 });
 
+
+
+
 const setPassword = catchAsync( async (req:Request, res:Response, next:NextFunction) => {
     const decodedUser = req.user;
     const password = req.body.password;
@@ -107,6 +111,8 @@ const forgotPassword = catchAsync(async  (req:Request, res:Response, next:NextFu
     });
 });
 
+
+
 const resetPassword = catchAsync( async (req:Request, res:Response, next:NextFunction) => {
     const decodedUser = req.user;
 
@@ -116,6 +122,19 @@ const resetPassword = catchAsync( async (req:Request, res:Response, next:NextFun
         statusCode:StatusCodes.OK,
         message:'Password Changed Successfully!',
         data:null,
+    });
+});
+
+
+
+const getMe = catchAsync(async(req:Request, res:Response, next:NextFunction) => {
+    const decodedUser = req.user;
+    const user = await authServices.getMe(decodedUser as JwtPayload);
+    sendResponse(res,{
+        success:true,
+        statusCode:StatusCodes.OK,
+        message:'Your profile retrieved successfully!',
+        data:user,
     });
 });
 
@@ -135,6 +154,7 @@ const googleCallbackController = catchAsync( async (req:Request, res:Response, n
     setAuthCookie(res, tokenInfo);
     res.redirect(`${envVars.FRONTEND_URL}/${redirectTo}`);
 });
+
 
 
 const logout = catchAsync(async (req:Request, res:Response, next:NextFunction) => {
@@ -157,6 +177,8 @@ const logout = catchAsync(async (req:Request, res:Response, next:NextFunction) =
     });
 });
 
+
+
 export const AuthController = {
     userLogin,
     getNewAccessToken,
@@ -166,5 +188,7 @@ export const AuthController = {
     changePassword,
     setPassword,
     forgotPassword,
+    getMe,
+
     
 };

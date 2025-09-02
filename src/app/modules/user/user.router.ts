@@ -15,6 +15,8 @@ router.post('/register', validateRequest(createUserZodSchema), userController.cr
 router.get('/all-users', checkAuth(Role.ADMIN), userController.getAllUser)
 
 router.patch('/:id', checkAuth(Role.ADMIN), validateRequest(updateUserZodSchema), userController.updateUser)
+
+
 router.patch('/update-profile/:id', checkAuth(...Object.values(Role)), validateRequest(updateUserZodSchema), userController.updateUserProfile)
 
 export const userRoute = router

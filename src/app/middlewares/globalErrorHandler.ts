@@ -38,6 +38,7 @@ export const globalErrorHandler  = async (err:any, req:Request, res:Response, ne
     else if(err.name === 'ValidationError'){
         const simplifiedError = handleValidationError(err);
         statusCode = simplifiedError.statusCode;
+        errorSources = simplifiedError.errorSources as TErrorSources[];
         message = simplifiedError.message;
 
     } 
@@ -61,7 +62,7 @@ export const globalErrorHandler  = async (err:any, req:Request, res:Response, ne
         success:false,
         message:message,
         errorSources,
-        err,
+        err: envVars.NODE_ENV === "development" ? err : null,
         stack: envVars.NODE_ENV === 'development' ? err.stack : null,
     });
 };

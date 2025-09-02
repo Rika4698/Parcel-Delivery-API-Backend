@@ -5,6 +5,7 @@ import { User } from "./user.model";
 import bcryptjs from 'bcryptjs';
 import { envVars } from '../../config/env';
 import { JwtPayload } from 'jsonwebtoken';
+import { QueryBuilder } from '../../utils/QueryBuilder';
 
 
 
@@ -68,6 +69,8 @@ const updateUser = async (userId:string,payload:Partial<IUser>,decodedUser: JwtP
     }
 };
 
+
+
 const updateUserProfile = async(userId:string, payload:Partial<IUser>, decodedUser:JwtPayload) => {
     const isUserExist = await User.findById(userId);
 
@@ -91,21 +94,27 @@ const updateUserProfile = async(userId:string, payload:Partial<IUser>, decodedUs
 }
 
 
-const getAllUser = async (decodedUser:JwtPayload) => {
+
+const getAllUser = async (decodedUser:JwtPayload, query: Record<string, string>) => {
     const adminUser = await User.findById(decodedUser.userId);
 
     if(!adminUser || adminUser.role !== Role.ADMIN){
         throw new AppError(StatusCodes.FORBIDDEN, 'Only admin can access all users.');
     }
-    const users = await User.find({})
-    const totalUser = await User.countDocuments()
+    const users = User.find({role: {$in: [Role.RECEIVER, Role.SENDER]},  });
+
+    const queryBuilder = new QueryBuilder(users, query);
+    const allUser = queryBuilder.filter().paginate();
+    const [data, meta] = await Promise.all([
+        allUser.build().exec(),
+        queryBuilder.getMeta(),
+    ]);
+    
     return{
-        data:users,
-        meta:{
-            total: totalUser
-        }
-    }
-}
+        data,
+        meta
+    };
+};
 
 export const userServices = {
     createUser,

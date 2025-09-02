@@ -46,7 +46,7 @@ const changePassword = async(oldPassword:string, newPassword:string, decodedUser
 
     user!.password = await bcryptjs.hash(newPassword, envVars.BCRYPT_SALT_ROUND);
 
-    user!.save();
+    await user!.save();
 };
 
 
@@ -78,6 +78,8 @@ const setPassword = async (password: string, decodedUser:JwtPayload) => {
     };
     
 };
+
+
 
 
 const forgotPassword = async(email:string) => {
@@ -118,6 +120,9 @@ const forgotPassword = async(email:string) => {
     })
 };
 
+
+
+
 const resetPassword = async(payload: Record<string, any>, decodedUser:JwtPayload) => {
     if(payload.id !== decodedUser.userId){
         throw new AppError(401, 'You can not reset your password');
@@ -139,10 +144,26 @@ const resetPassword = async(payload: Record<string, any>, decodedUser:JwtPayload
 
 
 
+
+const getMe = async (decodedUser:JwtPayload) => {
+    const user = await User.findById(decodedUser.userId).select('-password')
+    .populate({
+        path:'Parcels',
+        select:'tracking fee receiverEmail statusHistory currentStatus parcelDetails'
+    });
+    if(!user){
+        throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
+    }
+    return user;
+}
+
+
+
 export const authServices = {
     getNewAccessToken,
     changePassword,
     setPassword,
     forgotPassword,
     resetPassword,
+    getMe,
 }

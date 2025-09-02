@@ -12,7 +12,7 @@ import { IsActive } from "../modules/user/user.interface";
 
 export const checkAuth = (...authRole: string[]) => async (req:Request, res:Response, next:NextFunction) => {
     try{
-        let accessToken = req.cookies.access.token;
+        let accessToken = req.cookies.accessToken;
 
         if(req?.body?.token){
             accessToken = req.body.token;
@@ -21,8 +21,10 @@ export const checkAuth = (...authRole: string[]) => async (req:Request, res:Resp
         if(!accessToken){
             throw new AppError(StatusCodes.FORBIDDEN, 'No Token Received');
         }
+
         const decodedToken = verifyToken( accessToken, envVars.JWT_ACCESS_SECRET) as JwtPayload;
         const isUserExit = await User.findOne({email:decodedToken.email});
+
         if(!isUserExit){
             throw new AppError(StatusCodes.BAD_REQUEST, 'User does not exist');
         }
