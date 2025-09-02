@@ -18,7 +18,7 @@ interface EnvConfig {
     GOOGLE_CLIENT_SECRET: string;
     GOOGLE_CLIENT_ID: string;
     GOOGLE_CALLBACK_URL: string;
-    EXPRESS_SESSION: string;
+    EXPRESS_SESSION_SECRET: string;
     FRONTEND_URL: string;
     EMAIL_SENDER:{
         SMTP_USER:string;
@@ -27,15 +27,12 @@ interface EnvConfig {
         SMTP_HOST:string;
         SMTP_FROM:string;
     };
-    REDIS_HOST?:string;
-    REDIS_PORT?:string;
-    REDIS_PASSWORD?:string;
-    REDIS_USERNAME?:string;
+    
 }
 
 
 const loadEnvVariables = (): EnvConfig =>{
-    const requiredEnvVariables: string[] = ["PORT", "DB_URL", "NODE_ENV", "BCRYPT_SALT_ROUND", "JWT_ACCESS_EXPIRES", "JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET", "JWT_REFRESH_EXPIRES", "ADMIN_EMAIL", "ADMIN_PASSWORD", "ADMIN_NAME", "GOOGLE_CLIENT_SECRET", "GOOGLE_CLIENT_ID", "GOOGLE_CALLBACK_URL", "EXPRESS_SESSION","FRONTEND_URL", "SMTP_PASS", "SMTP_PORT", "SMTP_HOST", "SMTP_USER", "SMTP_FROM"];
+    const requiredEnvVariables: string[] = ["PORT", "DB_URL", "NODE_ENV", "BCRYPT_SALT_ROUND", "JWT_ACCESS_EXPIRES", "JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET", "JWT_REFRESH_EXPIRES", "ADMIN_EMAIL", "ADMIN_PASSWORD", "ADMIN_NAME", "GOOGLE_CLIENT_SECRET", "GOOGLE_CLIENT_ID", "GOOGLE_CALLBACK_URL", "EXPRESS_SESSION_SECRET","FRONTEND_URL", "SMTP_PASS", "SMTP_PORT", "SMTP_HOST", "SMTP_USER", "SMTP_FROM"];
     requiredEnvVariables.forEach(key => {
         if(!process.env[key]){
             throw new Error(`Missing require environment variable ${key}`)
@@ -57,7 +54,7 @@ const loadEnvVariables = (): EnvConfig =>{
         GOOGLE_CLIENT_SECRET:process.env.GOOGLE_CLIENT_SECRET as string,
         GOOGLE_CLIENT_ID:process.env.GOOGLE_CLIENT_ID as string,
         GOOGLE_CALLBACK_URL:process.env.GOOGLE_CALLBACK_URL as string,
-        EXPRESS_SESSION:process.env.EXPRESS_SESSION as string,
+        EXPRESS_SESSION_SECRET:process.env.EXPRESS_SESSION_SECRET as string,
         FRONTEND_URL:process.env.FRONTEND_URL as string,
         EMAIL_SENDER:{
             SMTP_FROM:process.env.SMTP_FROM as string,
