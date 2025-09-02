@@ -80,6 +80,8 @@ const setPassword = async (password: string, decodedUser:JwtPayload) => {
 };
 
 
+
+
 const forgotPassword = async(email:string) => {
     const isUserExit = await User.findOne({email});
 
@@ -118,6 +120,9 @@ const forgotPassword = async(email:string) => {
     })
 };
 
+
+
+
 const resetPassword = async(payload: Record<string, any>, decodedUser:JwtPayload) => {
     if(payload.id !== decodedUser.userId){
         throw new AppError(401, 'You can not reset your password');
@@ -136,6 +141,9 @@ const resetPassword = async(payload: Record<string, any>, decodedUser:JwtPayload
 
     await isUserExist.save()
 };
+
+
+
 
 const getMe = async (decodedUser:JwtPayload) => {
     const user = await User.findById(decodedUser.userId).select('-password')

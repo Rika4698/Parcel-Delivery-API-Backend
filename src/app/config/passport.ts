@@ -32,7 +32,9 @@ passport.use(
                 if(isGoogleAuth && !isUserExist.password){
                     return done(null, false, {message:'You have authenticated through Google. So if you want to login with credentials, then at first login with google and set a password for your Gmail and then you can login with email and password.', });
                 }
+
                 const isHashPasswordMatch = await bcryptjs.compare(password, isUserExist.password as string);
+
                 if(!isHashPasswordMatch){
                 return done(null, false, {message:'Password Does Not Match'});
             }
@@ -43,6 +45,8 @@ passport.use(
         }
     )
 );
+
+
 
 passport.use(
     new GoogleStrategy(

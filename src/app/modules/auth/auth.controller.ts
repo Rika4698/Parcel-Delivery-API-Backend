@@ -21,6 +21,7 @@ const userLogin = catchAsync(async (req:Request, res:Response, next:NextFunction
     passport.authenticate('local', async (err:any, user:any, info:any) => {
         if(err){
             console.log(err);
+
             return next(err);
         }
 
@@ -81,6 +82,9 @@ const changePassword = catchAsync( async (req:Request, res: Response, next:NextF
     });
 });
 
+
+
+
 const setPassword = catchAsync( async (req:Request, res:Response, next:NextFunction) => {
     const decodedUser = req.user;
     const password = req.body.password;
@@ -107,6 +111,8 @@ const forgotPassword = catchAsync(async  (req:Request, res:Response, next:NextFu
     });
 });
 
+
+
 const resetPassword = catchAsync( async (req:Request, res:Response, next:NextFunction) => {
     const decodedUser = req.user;
 
@@ -127,7 +133,7 @@ const getMe = catchAsync(async(req:Request, res:Response, next:NextFunction) => 
     sendResponse(res,{
         success:true,
         statusCode:StatusCodes.OK,
-        message:'Data received Successfully!',
+        message:'Your profile retrieved successfully!',
         data:user,
     });
 });
@@ -183,5 +189,6 @@ export const AuthController = {
     setPassword,
     forgotPassword,
     getMe,
+
     
 };

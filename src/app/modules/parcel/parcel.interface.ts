@@ -6,7 +6,9 @@ export enum ParcelStatus{
     PENDING = 'PENDING',
     APPROVED = 'APPROVED',
     IN_TRANSIT = 'IN_TRANSIT',
+    BLOCKED = 'BLOCKED',
     DELIVERED = 'DELIVERED',
+    CONFIRMED = 'CONFIRMED',
     CANCELLED = 'CANCELLED',
 }
 

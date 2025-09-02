@@ -52,6 +52,10 @@ const updateUserProfile = catchAsync(async (req:Request, res:Response, next:Next
     });
 });
 
+
+
+
+
 const getAllUser = catchAsync(async (req:Request, res:Response, next:NextFunction) => {
     const decodedToken = req.user;
     const query = req.query;

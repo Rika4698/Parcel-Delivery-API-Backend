@@ -94,6 +94,7 @@ const updateUserProfile = async(userId:string, payload:Partial<IUser>, decodedUs
 }
 
 
+
 const getAllUser = async (decodedUser:JwtPayload, query: Record<string, string>) => {
     const adminUser = await User.findById(decodedUser.userId);
 

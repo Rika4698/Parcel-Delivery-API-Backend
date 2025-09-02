@@ -5,6 +5,7 @@ import { notFound } from "./app/middlewares/notFound";
 import { router } from "./app/routes";
 import expressSession from 'express-session';
 import { envVars } from "./app/config/env";
+import './app/config/passport';
 import passport from "passport";
 import cookieParser from "cookie-parser";
 

@@ -62,7 +62,7 @@ export const globalErrorHandler  = async (err:any, req:Request, res:Response, ne
         success:false,
         message:message,
         errorSources,
-        err,
+        err: envVars.NODE_ENV === "development" ? err : null,
         stack: envVars.NODE_ENV === 'development' ? err.stack : null,
     });
 };
