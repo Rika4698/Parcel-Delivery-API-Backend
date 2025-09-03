@@ -50,11 +50,11 @@ Parcel Delivery API works like a courier service. Users can register, send parce
 ### 🔐 Authentication & Authorization
 
  
-      JWT-based authentication system.
+- JWT-based authentication system.
     
-      Three user roles: admin, sender, and receiver.
+- Three user roles: admin, sender, and receiver.
     
-      Role-based access control for all sensitive routes.
+- Role-based access control for all sensitive routes.
     
 
 ### 👥 Roles & Permissions
