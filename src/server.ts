@@ -7,14 +7,15 @@ import { createAdmin } from "./app/utils/createAdmin";
 
 
 let server : Server;
+const port = process.env.PORT || 5000;
 
 const startServer = async () => {
     try{
         await mongoose.connect(envVars.DB_URL)
         console.log("Connected to DB !!");
 
-        server = app.listen(envVars.PORT, () => {
-            console.log(`Server is listening to port ${envVars.PORT}`);
+        server = app.listen(port, () => {
+            console.log(`Server is listening to port ${port}`);
         });
     } catch (error ){
         console.log(error);
