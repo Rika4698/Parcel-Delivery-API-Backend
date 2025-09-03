@@ -374,7 +374,7 @@ const deliveryHistory = async (decodedUser:JwtPayload) => {
     if(user.role === Role.RECEIVER) {
         deliveredParcel = await Parcel.find({
             receiverEmail: user.email,
-            currentStatus: { $in: [ParcelStatus.DELIVERED, ParcelStatus.CONFIRMED, ParcelStatus.IN_TRANSIT, ParcelStatus.CANCELLED] },
+            currentStatus: { $in: [ParcelStatus.DELIVERED, ParcelStatus.CONFIRMED] },
         });
     } else if (user.role === Role.SENDER ) {
         deliveredParcel = await Parcel.find({
@@ -384,6 +384,18 @@ const deliveryHistory = async (decodedUser:JwtPayload) => {
     } else {
         throw new AppError(StatusCodes.FORBIDDEN, 'Only sender or receiver can view delivery history.');
     }
+
+    if (!deliveredParcel.length) {
+    return {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message:
+        user.role === Role.RECEIVER
+          ? "No delivered or confirmed parcels found for this receiver."
+          : "Parcel is already pending!",
+      data: [],
+    };
+  }
 
     return deliveredParcel;
 };
