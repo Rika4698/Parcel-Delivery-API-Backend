@@ -30,7 +30,7 @@ const userLogin = catchAsync(async (req:Request, res:Response, next:NextFunction
 
         }
 
-        const tokenInfo = createUserTokens(user);
+        const tokenInfo = await createUserTokens(user);
         const {password:past, ...rest} = user.toObject();
 
         setAuthCookie(res, tokenInfo);
@@ -47,6 +47,8 @@ const userLogin = catchAsync(async (req:Request, res:Response, next:NextFunction
     })(req, res, next);
 });
 
+
+
 const getNewAccessToken = catchAsync( async (req: Request, res:Response, next:NextFunction) =>{
     const refreshToken = req.cookies.refreshToken;
     const loginInfo = await authServices.getNewAccessToken(refreshToken)
@@ -60,6 +62,8 @@ const getNewAccessToken = catchAsync( async (req: Request, res:Response, next:Ne
     });
 
 });
+
+
 
 
 const changePassword = catchAsync( async (req:Request, res: Response, next:NextFunction) => {
@@ -85,6 +89,7 @@ const changePassword = catchAsync( async (req:Request, res: Response, next:NextF
 
 
 
+
 const setPassword = catchAsync( async (req:Request, res:Response, next:NextFunction) => {
     const decodedUser = req.user;
     const password = req.body.password;
@@ -100,6 +105,8 @@ const setPassword = catchAsync( async (req:Request, res:Response, next:NextFunct
 });
 
 
+
+
 const forgotPassword = catchAsync(async  (req:Request, res:Response, next:NextFunction) => {
     const {email} = req.body;
     await authServices.forgotPassword(email);
@@ -110,6 +117,7 @@ const forgotPassword = catchAsync(async  (req:Request, res:Response, next:NextFu
         data: null,
     });
 });
+
 
 
 
@@ -124,6 +132,7 @@ const resetPassword = catchAsync( async (req:Request, res:Response, next:NextFun
         data:null,
     });
 });
+
 
 
 
@@ -150,7 +159,7 @@ const googleCallbackController = catchAsync( async (req:Request, res:Response, n
     if(!user){
         throw new AppError(StatusCodes.NOT_FOUND, 'User Not Found');
     }
-    const tokenInfo = createUserTokens(user);
+    const tokenInfo = await createUserTokens(user);
     setAuthCookie(res, tokenInfo);
     res.redirect(`${envVars.FRONTEND_URL}/${redirectTo}`);
 });
@@ -160,13 +169,13 @@ const googleCallbackController = catchAsync( async (req:Request, res:Response, n
 const logout = catchAsync(async (req:Request, res:Response, next:NextFunction) => {
     res.clearCookie('accessToken', {
         httpOnly: true,
-        secure:false,
+        secure:envVars.NODE_ENV === 'production',
         sameSite:'lax',
     });
 
     res.clearCookie('refreshToken', {
         httpOnly:true,
-        secure:false,
+        secure: envVars.NODE_ENV === 'production',
         sameSite:'lax',
     });
     sendResponse(res, {
