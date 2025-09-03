@@ -42,7 +42,7 @@ const userLogin = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(voi
         if (!user) {
             return next(new AppError_1.default(http_status_codes_1.StatusCodes.NOT_FOUND, info.message));
         }
-        const tokenInfo = (0, createTokens_1.createUserTokens)(user);
+        const tokenInfo = yield (0, createTokens_1.createUserTokens)(user);
         const _a = user.toObject(), { password: past } = _a, rest = __rest(_a, ["password"]);
         (0, setCookie_1.setAuthCookie)(res, tokenInfo);
         (0, sendResponse_1.sendResponse)(res, {
@@ -126,19 +126,19 @@ const googleCallbackController = (0, catchAsync_1.catchAsync)((req, res, next) =
     if (!user) {
         throw new AppError_1.default(http_status_codes_1.StatusCodes.NOT_FOUND, 'User Not Found');
     }
-    const tokenInfo = (0, createTokens_1.createUserTokens)(user);
+    const tokenInfo = yield (0, createTokens_1.createUserTokens)(user);
     (0, setCookie_1.setAuthCookie)(res, tokenInfo);
     res.redirect(`${env_1.envVars.FRONTEND_URL}/${redirectTo}`);
 }));
 const logout = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     res.clearCookie('accessToken', {
         httpOnly: true,
-        secure: false,
+        secure: env_1.envVars.NODE_ENV === 'production',
         sameSite: 'lax',
     });
     res.clearCookie('refreshToken', {
         httpOnly: true,
-        secure: false,
+        secure: env_1.envVars.NODE_ENV === 'production',
         sameSite: 'lax',
     });
     (0, sendResponse_1.sendResponse)(res, {
