@@ -9,7 +9,7 @@ import { IsActive, Role } from "../user/user.interface";
 import { Parcel } from "./parcel.model";
 import mongoose from "mongoose";
 import { QueryBuilder } from "../../utils/QueryBuilder";
-import { notAllowedStatus } from "../../constants";
+import { notAllowedStatus, parcelSearchableFields } from "../../constants";
 
 
 
@@ -105,6 +105,9 @@ const createParcel = async (Payload: Partial<IParcel>, decodedUser: JwtPayload) 
     
 
 };
+
+
+
 
 
 
@@ -363,7 +366,8 @@ const confirmedDelivery  = async (parcelId:string, decodedUser:JwtPayload) => {
 
 
 
-const deliveryHistory = async (decodedUser:JwtPayload) => {
+const deliveryHistory = async (decodedUser:JwtPayload, allQuery:Record<string, string>)  => {
+
     const user = await User.findById(decodedUser.userId);
 
     if(!user) {
@@ -372,32 +376,41 @@ const deliveryHistory = async (decodedUser:JwtPayload) => {
     let deliveredParcel;
 
     if(user.role === Role.RECEIVER) {
-        deliveredParcel = await Parcel.find({
+        deliveredParcel =  Parcel.find({
             receiverEmail: user.email,
-            currentStatus: { $in: [ParcelStatus.DELIVERED, ParcelStatus.CONFIRMED] },
-        });
+            currentStatus: { $in: [ParcelStatus.DELIVERED, ParcelStatus.CONFIRMED, ParcelStatus.CANCELLED,], },
+        })
+        .populate('statusHistory.updatedBy', 'role -_id')
+        .populate('senderId', 'name email picture');
+
     } else if (user.role === Role.SENDER ) {
-        deliveredParcel = await Parcel.find({
+        deliveredParcel = Parcel.find({
             senderId: user._id,
-            currentStatus: { $in: [ParcelStatus.DELIVERED, ParcelStatus.CONFIRMED, ParcelStatus.CANCELLED, ParcelStatus.APPROVED, ParcelStatus.IN_TRANSIT] },
-        });
+            currentStatus: { $in: [ParcelStatus.DELIVERED, ParcelStatus.CONFIRMED, ParcelStatus.CANCELLED, ParcelStatus.APPROVED, ParcelStatus.IN_TRANSIT], },
+        })
+        .populate('statusHistory.updatedBy', 'role -_id')
+        .populate('senderId', 'name email picture');
     } else {
         throw new AppError(StatusCodes.FORBIDDEN, 'Only sender or receiver can view delivery history.');
     }
 
-    if (!deliveredParcel.length) {
-    return {
-      statusCode: StatusCodes.OK,
-      success: true,
-      message:
-        user.role === Role.RECEIVER
-          ? "No delivered or confirmed parcels found for this receiver."
-          : "Parcel is already pending!",
-      data: [],
-    };
-  }
+    const queryBuilder = new QueryBuilder(deliveredParcel, allQuery);
 
-    return deliveredParcel;
+    const allParcels = queryBuilder
+    .search(parcelSearchableFields)
+    .filter()
+    .paginate();
+
+    const [data,meta] = await Promise.all([
+        allParcels.build().exec(),
+        queryBuilder.getMeta(),
+    ]);
+
+    return{
+        data, meta,
+    };
+
+   
 };
 
 

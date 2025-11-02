@@ -123,7 +123,7 @@ const confirmedDelivery = catchAsync(async (req:Request, res:Response, next:Next
 
 const deliveryHistory = catchAsync(async (req:Request, res:Response, next:NextFunction) => {
     const decodedUser = req.user;
-    const history = await parcelService.deliveryHistory(decodedUser as JwtPayload);
+    const history = await parcelService.deliveryHistory(decodedUser as JwtPayload, req.query as Record<string, string>);
 
     sendResponse(res, {
         statusCode:StatusCodes.OK,
