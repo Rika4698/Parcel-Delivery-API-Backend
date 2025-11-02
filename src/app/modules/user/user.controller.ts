@@ -11,11 +11,13 @@ import { JwtPayload } from "jsonwebtoken";
 const createUser = catchAsync(
     async (req:Request, res:Response, next:NextFunction) => {
         const user = await userServices.createUser(req.body);
+        // console.log(user);
         sendResponse(res, {
             statusCode:StatusCodes.CREATED,
             success:true,
             message:'User Created Successfully',
             data:user,
+            
             
         });
     }
