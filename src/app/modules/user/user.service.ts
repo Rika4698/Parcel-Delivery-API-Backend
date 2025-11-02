@@ -10,7 +10,7 @@ import { QueryBuilder } from '../../utils/QueryBuilder';
 
 
 const createUser = async(payload:Partial<IUser>)=>{
-    const {email, password, name} = payload;
+    const {email, password, name, role} = payload;
     const isUserExit = await User.findOne({email});
 
     if(isUserExit){
@@ -27,12 +27,16 @@ const createUser = async(payload:Partial<IUser>)=>{
         providerId:email as string,
     };
 
+       
+
     const userPayload = {
         email,
         password:isHashPassword,
         auths:[authProvider],
         name,
+        role,
     };
+    // console.log("User payload before create:", userPayload);
 
     const user = await User.create(userPayload);
     return user;
