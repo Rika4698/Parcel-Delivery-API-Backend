@@ -25,9 +25,29 @@ const getParcelsStats = catchAsync(
 
 
 
+const getUsersStats = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const decodedUser = req.user;
+
+    const userStats = await statsService.getUserStats(
+      decodedUser as JwtPayload
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Parcel Delete Successfully!',
+      data: userStats,
+    });
+  }
+);
+
+
+
 
 
 export const statsController = {
   getParcelsStats,
+  getUsersStats
  
 };

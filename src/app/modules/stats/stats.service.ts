@@ -113,7 +113,67 @@ const getParcelsStats = async (decodedUser: JwtPayload) => {
 
 
 
+export const getUserStats = async (decodedUser: JwtPayload) => {
+  const isUserAdmin = decodedUser.role === 'ADMIN';
+  if (!isUserAdmin) {
+    throw new Error('Unauthorized access');
+  }
+  // Role  distribution
+  const roleStats = await User.aggregate([
+    {
+      $group: {
+        _id: '$role',
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  //  Active or Inactive
+  const activeUsers = await User.countDocuments({ isActive: 'ACTIVE' });
+  const inactiveUsers = await User.countDocuments({ isActive: 'INACTIVE' });
+
+  // Verified or Unverified
+  const verifiedUsers = await User.countDocuments({ isVerified: true });
+  const unverifiedUsers = await User.countDocuments({ isVerified: false });
+
+  //Monthly Growth (last 6 months)
+  const monthlyGrowth = await User.aggregate([
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+        },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { '_id.year': 1, '_id.month': 1 } },
+  ]);
+
+  //Auth Provider stat
+  const providerStats = await User.aggregate([
+    { $unwind: '$auths' },
+    {
+      $group: {
+        _id: '$auths.provider',
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  return {
+    roleStats,
+    activeInactive: { active: activeUsers, inactive: inactiveUsers },
+    verification: { verified: verifiedUsers, unverified: unverifiedUsers },
+    monthlyGrowth,
+    providerStats,
+  };
+};
+
+
+
 export const statsService = {
   getParcelsStats,
+  getUserStats,
   
 };
