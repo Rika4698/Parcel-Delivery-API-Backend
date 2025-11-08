@@ -45,11 +45,11 @@ const createParcel = async (Payload: Partial<IParcel>, decodedUser: JwtPayload) 
     }
 
 
-    const receiver = await User.findOne({ email:Payload.receiverEmail }).session(session);
+    // const receiver = await User.findOne({ email:Payload.receiverEmail }).session(session);
 
-     if(!receiver || receiver.role !== Role.RECEIVER){
-        throw new AppError(StatusCodes.BAD_REQUEST, 'Invalid receiver.');
-    }
+    //  if(!receiver || receiver.role !== Role.RECEIVER){
+    //     throw new AppError(StatusCodes.BAD_REQUEST, 'Invalid receiver.');
+    // }
 
     const pay = Payload.parcelDetails?.weight;
      if(!pay){
@@ -318,7 +318,7 @@ const getAParcel = async (parcelId:string, decodedUser:JwtPayload) => {
 
 
 
-const receiverIncomingParcels = async (decodedUser:JwtPayload) => {
+const receiverIncomingParcels = async (decodedUser:JwtPayload, allQuery: Record<string, string>) => {
     const user = await User.findById(decodedUser.userId);
 
     if(!user){
@@ -330,20 +330,39 @@ const receiverIncomingParcels = async (decodedUser:JwtPayload) => {
     }
 
 
-    const data = {
+    const query = {
         receiverEmail:user.email,
-        currentStatus:{ $ne:ParcelStatus.DELIVERED },
+        currentStatus:{ 
+            $nin: [
+        ParcelStatus.CANCELLED,
+        ParcelStatus.CONFIRMED,
+        ParcelStatus.BLOCKED,
+      ],
+         },
     };
 
-    const incomingParcels = await Parcel.find(data);
-    const totalIncomingParcels = await Parcel.countDocuments(data);
+    const IncomingParcels = Parcel.find(query)
+     .populate('statusHistory.updatedBy', 'role -_id')
+    .populate('senderId', 'name email picture -_id');
 
-    return{
-        data:incomingParcels,
-        meta:{
-            total:totalIncomingParcels,
-        },
-    };
+    const queryBuilder = new QueryBuilder(IncomingParcels, allQuery);
+
+  const allParcels = queryBuilder
+    .search(parcelSearchableFields)
+    .filter()
+    .paginate();
+
+    const [data, meta] = await Promise.all([
+    allParcels.build().exec(),
+    queryBuilder.getMeta(),
+  ]);
+
+    
+
+ return {
+    data,
+    meta,
+  };
 };
 
 
@@ -378,7 +397,7 @@ const confirmedDelivery  = async (parcelId:string, decodedUser:JwtPayload) => {
         }
 
         if(parcel.currentStatus === ParcelStatus.CONFIRMED){
-            throw new AppError(StatusCodes.BAD_REQUEST, 'Parcel has already been confirmed.')
+            throw new AppError(StatusCodes.BAD_REQUEST, 'Parcel has already been confirmed by the receiver.')
         }
 
         
