@@ -92,7 +92,8 @@ const getAParcel = catchAsync(async (req:Request, res:Response, next:NextFunctio
 
 const receiverIncomingParcels = catchAsync(async(req:Request, res:Response, next:NextFunction) => {
     const decodedUser = req.user;
-    const incomingParcel = await parcelService.receiverIncomingParcels(decodedUser as JwtPayload);
+    const query = req.query;
+    const incomingParcel = await parcelService.receiverIncomingParcels(decodedUser as JwtPayload, query as Record<string, string>);
 
     sendResponse(res, {
         statusCode:StatusCodes.OK,
