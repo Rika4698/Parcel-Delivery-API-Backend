@@ -39,11 +39,6 @@ export const updateUserZodSchema = z.object({
          .max(50, {message: 'Name cannot exceed 50 characters.'})
          .optional(),
 
-     email:z
-           .string()
-           .email({message:'Invalid email address format.'}) 
-           .min(5,{message:'Email must be at least 5 characters long.'})
-           .max(100, {message:'Email cannot exceed 100 characters.'}),
      password:z
             .string()
             .min(8, {message:'Password must be at least 8 characters long.'})
@@ -55,6 +50,8 @@ export const updateUserZodSchema = z.object({
             .string()
             .regex(/^(?:\+8801\d{9}|01\d{9})$/, {message: 'Phone number must be valid for Bangladesh. Format: +8801XXXXXXXXX or 01XXXXXXXXX'})
             .optional(),
+
+         picture: z.any().optional(),    
 
         role: z.enum(Object.values(Role) as [string]).optional(),
         
