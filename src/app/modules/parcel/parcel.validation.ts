@@ -33,10 +33,7 @@ export const updateParcelZodSchema = z.object({
         weight:z.number().positive('Weight must be positive').optional(),
         note:z.string().optional(),
     }).optional(),
-    fee:z
-        .number()
-        .min(1, 'Fee is required')
-        .optional(),              
+  currentStatus: z.string().optional()           
 });
 
 const ParcelStatusValues = Object.values(ParcelStatus) as [string, ...string[]];

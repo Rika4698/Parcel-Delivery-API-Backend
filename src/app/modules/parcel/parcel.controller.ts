@@ -151,13 +151,19 @@ const updateParcelStatus = catchAsync(async (req: Request, res:Response, next:Ne
 
 
 const trackParcel = catchAsync(async (req:Request, res:Response, next:NextFunction) => {
-    const parcel = await Parcel.findOne({
-        trackingId:req.params.trackingId,
-    }).select('currentStatus parcelDetails  fee  -_id');
+    const trackId = req.params.trackingId;
+    const match = await Parcel.findOne({trackingId:trackId});
 
-    if(!parcel){
-        throw new AppError(StatusCodes.NOT_FOUND, 'Parcel not found with this tracking Id!');
+    if(!match){
+        throw new AppError(StatusCodes.NOT_FOUND, 'Parcel not found with this tracking ID!');
     }
+
+    const parcel = await Parcel.findOne({
+      trackingId: req.params.trackingId,
+    })
+      .select('-trackingId -isDeleted')
+      .populate('senderId', 'name email phone -_id')
+      .populate('statusHistory.updatedBy', 'role -_id');
 
     sendResponse(res, {
         statusCode:StatusCodes.OK,
