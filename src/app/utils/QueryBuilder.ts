@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-dynamic-delete */
 import { Query } from "mongoose";
 import { excludeFields } from "../constants";
@@ -23,15 +24,46 @@ export class QueryBuilder<T> {
         return this;
     }
 
-    search(searchableField:string[]):this {
+    search(searchableField:string[]): this {
         const searchTerm = this.query.searchTerm || '';
-        const searchQuery = {
-            $or: searchableField.map(field => ({
-                [field]: {$regex:searchTerm, $options:'i'},
-            })),
-        };
-        this.queryModal = this.queryModal.find(searchQuery);
-        return this;
+    
+    if (!searchTerm) return this;
+
+    const regexFields = searchableField.filter(f => f !== 'isActive');
+    const orQueries: any[] = [];
+
+ 
+    if (regexFields.length) {
+        orQueries.push(...regexFields.map(field => ({
+            [field]: { $regex: searchTerm, $options: 'i' }
+        })));
+    }
+
+ 
+    if (searchableField.includes('isActive')) {
+        const upperSearch = searchTerm.toUpperCase();
+        
+        // Exact match
+        if (['ACTIVE', 'INACTIVE', 'BLOCKED'].includes(upperSearch)) {
+            orQueries.push({ isActive: upperSearch });
+        } 
+        // Partial match for better UX
+        else if ('ACTIVE'.includes(upperSearch)) {
+            orQueries.push({ isActive: 'ACTIVE' });
+        } 
+        else if ('INACTIVE'.includes(upperSearch)) {
+            orQueries.push({ isActive: 'INACTIVE' });
+        } 
+        else if ('BLOCKED'.includes(upperSearch)) {
+            orQueries.push({ isActive: 'BLOCKED' });
+        }
+    }
+
+    if (orQueries.length > 0) {
+        this.queryModal = this.queryModal.find({ $or: orQueries });
+    }
+
+    return this;
     }
 
     sort():this{
