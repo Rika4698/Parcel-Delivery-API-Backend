@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { JwtPayload } from "jsonwebtoken";
@@ -239,43 +240,78 @@ const getAParcel = async (parcelId:string, decodedUser:JwtPayload) => {
 
 
 
-const getAllParcels = async (decodedUser:JwtPayload, allQuery:Record<string, string>) => {
-    const user = await User.findById(decodedUser.userId);
+ const getAllParcels = async (
+  decodedUser: JwtPayload,
+  allQuery: Record<string, string>
+) => {
+  const user = await User.findById(decodedUser.userId);
 
-    if(!user){
-        throw new AppError(StatusCodes.NOT_FOUND, 'User not found.');
-    }
+  if (!user) throw new AppError(StatusCodes.NOT_FOUND, 'User not found.');
+  if (user.isActive === IsActive.BLOCKED)
+    throw new AppError(StatusCodes.BAD_REQUEST, 'User is blocked.');
 
-    if(user.isActive === IsActive.BLOCKED){
-        throw new AppError(StatusCodes.BAD_REQUEST, 'User is blocked.');
-    }
+  const query: Record<string, any> = { isDeleted: { $ne: true } };
 
+  // Role-based filter
+  if (user.role === Role.SENDER) {
+    query.senderId = user._id;
+  } else if (user.role === Role.RECEIVER) {
+    query.receiverEmail = user.email;
+  }
 
-    let query = {};
+  // Search feature
+  if (allQuery.searchTrim) {
+    const regex = new RegExp(allQuery.searchTrim, 'i');
 
-    if(user.role === Role.SENDER){
-        query = {senderId:user._id};
-    } else if(user.role === Role.RECEIVER){
-        query = {receiverEmail:user.email};
-    } else if (user.role === Role.ADMIN){
-        query={};
-    }
+    // sender email check from user 
+    const matchedSenders = await User.find(
+      { email: { $regex: regex } },
+      { _id: 1 }
+    );
 
-    const parcels = Parcel.find(query);
+    const senderIds = matchedSenders.map(u => u._id);
 
-    const queryBuilder = new QueryBuilder(parcels, allQuery);
+    // Apply or condition
+    query.$or = [
+      { trackingId: regex },
+      { receiverEmail: regex },
+      { 'parcelDetails.address': regex },
+      { 'parcelDetails.phone': regex },
+      { 'parcelDetails.note': regex },
+      { currentStatus: regex },
+      ...(senderIds.length > 0 ? [{ senderId: { $in: senderIds } }] : []),
+    ];
+  }
 
-    const allParcel = queryBuilder.filter().paginate();
-    const [data, meta] = await Promise.all([
-        allParcel.build().exec(),
-        queryBuilder.getMeta(),
-    ])
+  // Filter by currentStatus
+  if (allQuery.currentStatus) {
+    query.currentStatus = allQuery.currentStatus;
+  }
 
-    const totalParcel = await Parcel.countDocuments(query);
-    return{
-        data,
-        meta
-    };
+  // Pagination
+  const page = Number(allQuery.page) || 1;
+  const limit = Number(allQuery.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Query execution
+  const [data, total] = await Promise.all([
+    Parcel.find(query)
+      .populate('senderId', 'name email picture')
+      .populate('statusHistory.updatedBy', 'role -_id')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Parcel.countDocuments(query),
+  ]);
+
+  const meta = {
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+
+  return { data, meta };
 };
 
 
