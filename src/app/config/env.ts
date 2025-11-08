@@ -27,12 +27,18 @@ interface EnvConfig {
         SMTP_HOST:string;
         SMTP_FROM:string;
     };
+    CLOUDINARY: {
+    CLOUDINARY_CLOUD_NAME: string;
+    CLOUDINARY_API_KEY: string;
+    CLOUDINARY_API_SECRET: string;
+  };
     
 }
 
 
 const loadEnvVariables = (): EnvConfig =>{
-    const requiredEnvVariables: string[] = ["PORT", "DB_URL", "NODE_ENV", "BCRYPT_SALT_ROUND", "JWT_ACCESS_EXPIRES", "JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET", "JWT_REFRESH_EXPIRES", "ADMIN_EMAIL", "ADMIN_PASSWORD", "ADMIN_NAME", "GOOGLE_CLIENT_SECRET", "GOOGLE_CLIENT_ID", "GOOGLE_CALLBACK_URL", "EXPRESS_SESSION_SECRET","FRONTEND_URL", "SMTP_PASS", "SMTP_PORT", "SMTP_HOST", "SMTP_USER", "SMTP_FROM"];
+    const requiredEnvVariables: string[] = ["PORT", "DB_URL", "NODE_ENV", "BCRYPT_SALT_ROUND", "JWT_ACCESS_EXPIRES", "JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET", "JWT_REFRESH_EXPIRES", "ADMIN_EMAIL", "ADMIN_PASSWORD", "ADMIN_NAME", "GOOGLE_CLIENT_SECRET", "GOOGLE_CLIENT_ID", "GOOGLE_CALLBACK_URL", "EXPRESS_SESSION_SECRET","FRONTEND_URL", "SMTP_PASS", "SMTP_PORT", "SMTP_HOST", "SMTP_USER", "SMTP_FROM", 'CLOUDINARY_CLOUD_NAME',
+    'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET',];
     requiredEnvVariables.forEach(key => {
         if(!process.env[key]){
             throw new Error(`Missing require environment variable ${key}`)
@@ -64,6 +70,11 @@ const loadEnvVariables = (): EnvConfig =>{
             SMTP_USER:process.env.SMTP_USER as string,
 
         },
+      CLOUDINARY: {
+      CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME as string,
+      CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY as string,
+      CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET as string,
+    },
 
     };
 };
