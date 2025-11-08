@@ -7,6 +7,7 @@ import { envVars } from '../../config/env';
 import { JwtPayload } from 'jsonwebtoken';
 import { QueryBuilder } from '../../utils/QueryBuilder';
 import { deleteImageFromCLoudinary } from '../../config/cloudinary.config';
+import { userSearchableFields } from '../../constants';
 
 
 
@@ -119,7 +120,8 @@ const getAllUser = async (decodedUser:JwtPayload, query: Record<string, string>)
     const users = User.find({role: {$in: [Role.RECEIVER, Role.SENDER]},  });
 
     const queryBuilder = new QueryBuilder(users, query);
-    const allUser = queryBuilder.filter().paginate();
+    const allUser = queryBuilder.search(userSearchableFields).filter().paginate();
+    
     const [data, meta] = await Promise.all([
         allUser.build().exec(),
         queryBuilder.getMeta(),
@@ -130,6 +132,7 @@ const getAllUser = async (decodedUser:JwtPayload, query: Record<string, string>)
         meta
     };
 };
+
 
 export const userServices = {
     createUser,
