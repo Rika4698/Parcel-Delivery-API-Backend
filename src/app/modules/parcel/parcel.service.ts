@@ -142,8 +142,26 @@ const updateParcel = async (parcelId: string, payload:Partial<IParcel>, decodedU
     }
 
     const {currentStatus, statusHistory, ...senderPayload } = payload;
+    const updateFields: any = {};
 
-    const updatedParcel = await Parcel.findByIdAndUpdate(parcelId, senderPayload, {new:true, runValidators:true,  });
+
+for (const key of Object.keys(senderPayload)) {
+  if (key === 'parcelDetails' && senderPayload.parcelDetails) {
+   
+    for (const nestedKey of Object.keys(senderPayload.parcelDetails)) {
+      updateFields[`parcelDetails.${nestedKey}`] = senderPayload.parcelDetails[nestedKey as keyof typeof senderPayload.parcelDetails];
+    }
+  } else {
+    updateFields[key] = senderPayload[key as keyof typeof senderPayload];
+  }
+}
+
+   
+const updatedParcel = await Parcel.findByIdAndUpdate(
+  parcelId,
+  { $set: updateFields },
+  { new: true, runValidators: true }
+);
 
     return updatedParcel;
 };
