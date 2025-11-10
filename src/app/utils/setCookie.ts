@@ -9,19 +9,21 @@ interface authTokenInfo {
 }
 
 export const setAuthCookie = (res:Response, tokenInfo:authTokenInfo) => {
-    if(tokenInfo.accessToken){
-        res.cookie('accessToken', tokenInfo.accessToken, {
-            httpOnly:true,
-            secure:true,
-            sameSite:"none"
-        });
-    }
+    const isProduction = process.env.NODE_ENV === "production";
+    if (tokenInfo.accessToken) {
+  res.cookie("accessToken", tokenInfo.accessToken, {
+    httpOnly: true,
+    secure: isProduction,    
+    sameSite: isProduction ? "none" : "lax", 
+  });
+}
 
-    if(tokenInfo.refreshToken) {
-        res.cookie('refreshToken', tokenInfo.refreshToken, {
-            httpOnly:true,
-            secure:true,
-            sameSite:"none"
-        });
-    }
+if (tokenInfo.refreshToken) {
+  res.cookie("refreshToken", tokenInfo.refreshToken, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  });
+}
+
 }
