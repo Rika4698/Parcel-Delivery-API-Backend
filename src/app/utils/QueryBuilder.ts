@@ -45,11 +45,11 @@ export class QueryBuilder<T> {
     if (searchableField.includes('isActive')) {
         const upperSearch = searchTerm.toUpperCase();
         
-        // Exact match
+      
         if (['ACTIVE', 'INACTIVE', 'BLOCKED'].includes(upperSearch)) {
             orQueries.push({ isActive: upperSearch });
         } 
-        // Partial match for better UX
+      
         else if ('ACTIVE'.includes(upperSearch)) {
             orQueries.push({ isActive: 'ACTIVE' });
         } 

@@ -359,11 +359,11 @@ const receiverIncomingParcels = async (decodedUser:JwtPayload, allQuery: Record<
   if (allQuery.searchTrim) {
     const regex = new RegExp(allQuery.searchTrim, 'i');
 
-    // senderId lookup
+
     const matchedSenders = await User.find({ email: { $regex: regex } }, { _id: 1 });
     const senderIds = matchedSenders.map(u => u._id);
 
-    // $or query for search
+   
     query.$or = [
       { trackingId: regex },
       { senderEmail: regex },

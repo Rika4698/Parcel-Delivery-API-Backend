@@ -25,10 +25,10 @@ const userLogin = catchAsync(async (req:Request, res:Response, next:NextFunction
             return next(err);
         }
 
-        if(!user){
-            return next (new AppError(StatusCodes.NOT_FOUND, info.message));
-
-        }
+        if (!user) {
+   
+    return next(new AppError(StatusCodes.NOT_FOUND, info?.message || 'Email is not registered.'));
+}
 
         const tokenInfo = await createUserTokens(user);
         const {password:past, ...rest} = user.toObject();
@@ -167,17 +167,19 @@ const googleCallbackController = catchAsync( async (req:Request, res:Response, n
 
 
 const logout = catchAsync(async (req:Request, res:Response, next:NextFunction) => {
-    res.clearCookie('accessToken', {
-        httpOnly: true,
-        secure:envVars.NODE_ENV === 'production',
-        sameSite:'lax',
-    });
+  const isProduction = envVars.NODE_ENV === 'production';
 
-    res.clearCookie('refreshToken', {
-        httpOnly:true,
-        secure: envVars.NODE_ENV === 'production',
-        sameSite:'lax',
-    });
+  res.clearCookie('accessToken', {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+  });
+
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+  });
     sendResponse(res, {
         success:true,
         statusCode:StatusCodes.OK,
