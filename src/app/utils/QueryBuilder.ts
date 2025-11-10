@@ -29,8 +29,10 @@ export class QueryBuilder<T> {
     
     if (!searchTerm) return this;
 
-    const regexFields = searchableField.filter(f => f !== 'isActive');
     const orQueries: any[] = [];
+
+    const regexFields = searchableField.filter(f => f !== 'isActive');
+    
 
  
     if (regexFields.length) {
@@ -60,7 +62,7 @@ export class QueryBuilder<T> {
     }
 
     if (orQueries.length > 0) {
-        this.queryModal = this.queryModal.find({ $or: orQueries });
+        this.queryModal = this.queryModal.or(orQueries );
     }
 
     return this;

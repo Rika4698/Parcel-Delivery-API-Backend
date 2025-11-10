@@ -292,6 +292,7 @@ const getAParcel = async (parcelId:string, decodedUser:JwtPayload) => {
     // Apply or condition
     query.$or = [
       { trackingId: regex },
+      { senderEmail: regex },
       { receiverEmail: regex },
       { 'parcelDetails.address': regex },
       { 'parcelDetails.phone': regex },
@@ -348,34 +349,59 @@ const receiverIncomingParcels = async (decodedUser:JwtPayload, allQuery: Record<
     }
 
 
-    const query = {
-        receiverEmail:user.email,
-        currentStatus:{ 
-            $nin: [
-        ParcelStatus.CANCELLED,
-        ParcelStatus.CONFIRMED,
-        ParcelStatus.BLOCKED,
-      ],
-         },
-    };
+   const query: Record<string, any> = {
+    receiverEmail: user.email,
+    currentStatus: { $nin: [ParcelStatus.CANCELLED, ParcelStatus.CONFIRMED, ParcelStatus.BLOCKED] },
+    isDeleted: { $ne: true },
+  };
 
-    const IncomingParcels = Parcel.find(query)
-     .populate('statusHistory.updatedBy', 'role -_id')
-    .populate('senderId', 'name email picture -_id');
+ 
+  if (allQuery.searchTrim) {
+    const regex = new RegExp(allQuery.searchTrim, 'i');
 
-    const queryBuilder = new QueryBuilder(IncomingParcels, allQuery);
+    // senderId lookup
+    const matchedSenders = await User.find({ email: { $regex: regex } }, { _id: 1 });
+    const senderIds = matchedSenders.map(u => u._id);
 
-  const allParcels = queryBuilder
-    .search(parcelSearchableFields)
-    .filter()
-    .paginate();
+    // $or query for search
+    query.$or = [
+      { trackingId: regex },
+      { senderEmail: regex },
+      { 'parcelDetails.address': regex },
+      { 'parcelDetails.phone': regex },
+      { 'parcelDetails.note': regex },
+      { currentStatus: regex },
+      ...(senderIds.length > 0 ? [{ senderId: { $in: senderIds } }] : []),
+    ];
+  }
 
-    const [data, meta] = await Promise.all([
-    allParcels.build().exec(),
-    queryBuilder.getMeta(),
+
+  if (allQuery.currentStatus) {
+    query.currentStatus = allQuery.currentStatus;
+  }
+
+
+  const page = Number(allQuery.page) || 1;
+  const limit = Number(allQuery.limit) || 10;
+  const skip = (page - 1) * limit;
+
+ 
+  const [data, total] = await Promise.all([
+    Parcel.find(query)
+      .populate('senderId', 'name email picture')
+      .populate('statusHistory.updatedBy', 'role -_id')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Parcel.countDocuments(query),
   ]);
 
-    
+  const meta = {
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 
  return {
     data,
@@ -470,7 +496,7 @@ const deliveryHistory = async (decodedUser:JwtPayload, allQuery:Record<string, s
     const queryBuilder = new QueryBuilder(deliveredParcel, allQuery);
 
     const allParcels = queryBuilder
-    .search(parcelSearchableFields)
+    // .search(parcelSearchableFields)
     .filter()
     .paginate();
 
