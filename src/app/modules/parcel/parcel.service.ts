@@ -9,8 +9,8 @@ import { StatusCodes } from "http-status-codes";
 import { IsActive, Role } from "../user/user.interface";
 import { Parcel } from "./parcel.model";
 import mongoose from "mongoose";
-import { QueryBuilder } from "../../utils/QueryBuilder";
-import { notAllowedStatus, parcelSearchableFields } from "../../constants";
+
+import { notAllowedStatus} from "../../constants";
 
 
 
@@ -472,38 +472,78 @@ const deliveryHistory = async (decodedUser:JwtPayload, allQuery:Record<string, s
     if(!user) {
         throw new AppError(StatusCodes.UNAUTHORIZED, 'User not found.');
     }
-    let deliveredParcel;
+    if (user.isActive === IsActive.BLOCKED)
+    throw new AppError(StatusCodes.BAD_REQUEST, 'User is blocked.');
 
-    if(user.role === Role.RECEIVER) {
-        deliveredParcel =  Parcel.find({
-            receiverEmail: user.email,
-            currentStatus: { $in: [ParcelStatus.DELIVERED, ParcelStatus.CONFIRMED, ParcelStatus.CANCELLED,], },
-        })
-        .populate('statusHistory.updatedBy', 'role -_id')
-        .populate('senderId', 'name email picture');
+  
+  const query: Record<string, any> = { isDeleted: { $ne: true } };
 
-    } else if (user.role === Role.SENDER ) {
-        deliveredParcel = Parcel.find({
-            senderId: user._id,
-            currentStatus: { $in: [ParcelStatus.DELIVERED, ParcelStatus.CONFIRMED, ParcelStatus.CANCELLED, ParcelStatus.APPROVED, ParcelStatus.IN_TRANSIT], },
-        })
-        .populate('statusHistory.updatedBy', 'role -_id')
-        .populate('senderId', 'name email picture');
-    } else {
-        throw new AppError(StatusCodes.FORBIDDEN, 'Only sender or receiver can view delivery history.');
+  if (user.role === Role.RECEIVER) {
+    query.receiverEmail = user.email;
+    query.currentStatus = {
+      $in: [ParcelStatus.DELIVERED, ParcelStatus.CONFIRMED, ParcelStatus.CANCELLED],
+    };
+  } else if (user.role === Role.SENDER) {
+    query.senderId = user._id;
+    query.currentStatus = {
+      $in: [
+        ParcelStatus.DELIVERED,
+        ParcelStatus.CONFIRMED,
+        ParcelStatus.CANCELLED,
+        ParcelStatus.APPROVED,
+        ParcelStatus.IN_TRANSIT,
+      ],
+    };
+  } else {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      'Only sender or receiver can view delivery history.'
+    );
+  }
+
+ 
+  if (allQuery.searchTrim) {
+    const regex = new RegExp(allQuery.searchTrim, 'i');
+
+    let senderIds: string[] = [];
+    if (user.role === Role.RECEIVER) {
+      const matchedSenders = await User.find({ email: { $regex: regex } }, { _id: 1 });
+      senderIds = matchedSenders.map(u => u._id.toString());
     }
 
-    const queryBuilder = new QueryBuilder(deliveredParcel, allQuery);
+    query.$or = [
+      { trackingId: regex },
+      { 'parcelDetails.address': regex },
+      { 'parcelDetails.phone': regex },
+      { 'parcelDetails.note': regex },
+      { currentStatus: regex },
+      ...(senderIds.length > 0 ? [{ senderId: { $in: senderIds } }] : []),
+    ];
+  }
 
-    const allParcels = queryBuilder
-    // .search(parcelSearchableFields)
-    .filter()
-    .paginate();
+ 
+  const page = Number(allQuery.page) || 1;
+  const limit = Number(allQuery.limit) || 10;
+  const skip = (page - 1) * limit;
 
-    const [data,meta] = await Promise.all([
-        allParcels.build().exec(),
-        queryBuilder.getMeta(),
-    ]);
+
+  const [data, total] = await Promise.all([
+    Parcel.find(query)
+      .populate('senderId', 'name email picture')
+      .populate('statusHistory.updatedBy', 'role -_id')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Parcel.countDocuments(query),
+  ]);
+
+ 
+  const meta = {
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 
     return{
         data, meta,
