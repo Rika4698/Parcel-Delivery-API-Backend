@@ -8,6 +8,7 @@ import { statsController } from "./stats.controller";
 const router = Router()
 
 router.get('/parcel-stat', checkAuth(Role.ADMIN) , statsController.getParcelsStats)
+router.get('/user-stats', checkAuth(Role.ADMIN) , statsController.getUsersStats)
 
 
 

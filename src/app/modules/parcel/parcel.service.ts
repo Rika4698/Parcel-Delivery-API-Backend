@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { JwtPayload } from "jsonwebtoken";
@@ -8,8 +9,8 @@ import { StatusCodes } from "http-status-codes";
 import { IsActive, Role } from "../user/user.interface";
 import { Parcel } from "./parcel.model";
 import mongoose from "mongoose";
-import { QueryBuilder } from "../../utils/QueryBuilder";
-import { notAllowedStatus } from "../../constants";
+
+import { notAllowedStatus} from "../../constants";
 
 
 
@@ -44,11 +45,11 @@ const createParcel = async (Payload: Partial<IParcel>, decodedUser: JwtPayload) 
     }
 
 
-    const receiver = await User.findOne({ email:Payload.receiverEmail }).session(session);
+    // const receiver = await User.findOne({ email:Payload.receiverEmail }).session(session);
 
-     if(!receiver || receiver.role !== Role.RECEIVER){
-        throw new AppError(StatusCodes.BAD_REQUEST, 'Invalid receiver.');
-    }
+    //  if(!receiver || receiver.role !== Role.RECEIVER){
+    //     throw new AppError(StatusCodes.BAD_REQUEST, 'Invalid receiver.');
+    // }
 
     const pay = Payload.parcelDetails?.weight;
      if(!pay){
@@ -110,6 +111,9 @@ const createParcel = async (Payload: Partial<IParcel>, decodedUser: JwtPayload) 
 
 
 
+
+
+
 const updateParcel = async (parcelId: string, payload:Partial<IParcel>, decodedUser:JwtPayload) => {
     const parcel = await Parcel.findById(parcelId);
 
@@ -138,8 +142,26 @@ const updateParcel = async (parcelId: string, payload:Partial<IParcel>, decodedU
     }
 
     const {currentStatus, statusHistory, ...senderPayload } = payload;
+    const updateFields: any = {};
 
-    const updatedParcel = await Parcel.findByIdAndUpdate(parcelId, senderPayload, {new:true, runValidators:true,  });
+
+for (const key of Object.keys(senderPayload)) {
+  if (key === 'parcelDetails' && senderPayload.parcelDetails) {
+   
+    for (const nestedKey of Object.keys(senderPayload.parcelDetails)) {
+      updateFields[`parcelDetails.${nestedKey}`] = senderPayload.parcelDetails[nestedKey as keyof typeof senderPayload.parcelDetails];
+    }
+  } else {
+    updateFields[key] = senderPayload[key as keyof typeof senderPayload];
+  }
+}
+
+   
+const updatedParcel = await Parcel.findByIdAndUpdate(
+  parcelId,
+  { $set: updateFields },
+  { new: true, runValidators: true }
+);
 
     return updatedParcel;
 };
@@ -236,50 +258,86 @@ const getAParcel = async (parcelId:string, decodedUser:JwtPayload) => {
 
 
 
-const getAllParcels = async (decodedUser:JwtPayload, allQuery:Record<string, string>) => {
-    const user = await User.findById(decodedUser.userId);
+ const getAllParcels = async (
+  decodedUser: JwtPayload,
+  allQuery: Record<string, string>
+) => {
+  const user = await User.findById(decodedUser.userId);
 
-    if(!user){
-        throw new AppError(StatusCodes.NOT_FOUND, 'User not found.');
-    }
+  if (!user) throw new AppError(StatusCodes.NOT_FOUND, 'User not found.');
+  if (user.isActive === IsActive.BLOCKED)
+    throw new AppError(StatusCodes.BAD_REQUEST, 'User is blocked.');
 
-    if(user.isActive === IsActive.BLOCKED){
-        throw new AppError(StatusCodes.BAD_REQUEST, 'User is blocked.');
-    }
+  const query: Record<string, any> = { isDeleted: { $ne: true } };
 
+  // Role-based filter
+  if (user.role === Role.SENDER) {
+    query.senderId = user._id;
+  } else if (user.role === Role.RECEIVER) {
+    query.receiverEmail = user.email;
+  }
 
-    let query = {};
+  // Search feature
+  if (allQuery.searchTrim) {
+    const regex = new RegExp(allQuery.searchTrim, 'i');
 
-    if(user.role === Role.SENDER){
-        query = {senderId:user._id};
-    } else if(user.role === Role.RECEIVER){
-        query = {receiverEmail:user.email};
-    } else if (user.role === Role.ADMIN){
-        query={};
-    }
+    // sender email check from user 
+    const matchedSenders = await User.find(
+      { email: { $regex: regex } },
+      { _id: 1 }
+    );
 
-    const parcels = Parcel.find(query);
+    const senderIds = matchedSenders.map(u => u._id);
 
-    const queryBuilder = new QueryBuilder(parcels, allQuery);
+    // Apply or condition
+    query.$or = [
+      { trackingId: regex },
+      { senderEmail: regex },
+      { receiverEmail: regex },
+      { 'parcelDetails.address': regex },
+      { 'parcelDetails.phone': regex },
+      { 'parcelDetails.note': regex },
+      { currentStatus: regex },
+      ...(senderIds.length > 0 ? [{ senderId: { $in: senderIds } }] : []),
+    ];
+  }
 
-    const allParcel = queryBuilder.filter().paginate();
-    const [data, meta] = await Promise.all([
-        allParcel.build().exec(),
-        queryBuilder.getMeta(),
-    ])
+  // Filter by currentStatus
+  if (allQuery.currentStatus) {
+    query.currentStatus = allQuery.currentStatus;
+  }
 
-    const totalParcel = await Parcel.countDocuments(query);
-    return{
-        data,
-        meta
-    };
+  // Pagination
+  const page = Number(allQuery.page) || 1;
+  const limit = Number(allQuery.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Query execution
+  const [data, total] = await Promise.all([
+    Parcel.find(query)
+      .populate('senderId', 'name email picture')
+      .populate('statusHistory.updatedBy', 'role -_id')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Parcel.countDocuments(query),
+  ]);
+
+  const meta = {
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+
+  return { data, meta };
 };
 
 
 
 
 
-const receiverIncomingParcels = async (decodedUser:JwtPayload) => {
+const receiverIncomingParcels = async (decodedUser:JwtPayload, allQuery: Record<string, string>) => {
     const user = await User.findById(decodedUser.userId);
 
     if(!user){
@@ -291,20 +349,64 @@ const receiverIncomingParcels = async (decodedUser:JwtPayload) => {
     }
 
 
-    const data = {
-        receiverEmail:user.email,
-        currentStatus:{ $ne:ParcelStatus.DELIVERED },
-    };
+   const query: Record<string, any> = {
+    receiverEmail: user.email,
+    currentStatus: { $nin: [ParcelStatus.CANCELLED, ParcelStatus.CONFIRMED, ParcelStatus.BLOCKED] },
+    isDeleted: { $ne: true },
+  };
 
-    const incomingParcels = await Parcel.find(data);
-    const totalIncomingParcels = await Parcel.countDocuments(data);
+ 
+  if (allQuery.searchTrim) {
+    const regex = new RegExp(allQuery.searchTrim, 'i');
 
-    return{
-        data:incomingParcels,
-        meta:{
-            total:totalIncomingParcels,
-        },
-    };
+    // senderId lookup
+    const matchedSenders = await User.find({ email: { $regex: regex } }, { _id: 1 });
+    const senderIds = matchedSenders.map(u => u._id);
+
+    // $or query for search
+    query.$or = [
+      { trackingId: regex },
+      { senderEmail: regex },
+      { 'parcelDetails.address': regex },
+      { 'parcelDetails.phone': regex },
+      { 'parcelDetails.note': regex },
+      { currentStatus: regex },
+      ...(senderIds.length > 0 ? [{ senderId: { $in: senderIds } }] : []),
+    ];
+  }
+
+
+  if (allQuery.currentStatus) {
+    query.currentStatus = allQuery.currentStatus;
+  }
+
+
+  const page = Number(allQuery.page) || 1;
+  const limit = Number(allQuery.limit) || 10;
+  const skip = (page - 1) * limit;
+
+ 
+  const [data, total] = await Promise.all([
+    Parcel.find(query)
+      .populate('senderId', 'name email picture')
+      .populate('statusHistory.updatedBy', 'role -_id')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Parcel.countDocuments(query),
+  ]);
+
+  const meta = {
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+
+ return {
+    data,
+    meta,
+  };
 };
 
 
@@ -339,7 +441,7 @@ const confirmedDelivery  = async (parcelId:string, decodedUser:JwtPayload) => {
         }
 
         if(parcel.currentStatus === ParcelStatus.CONFIRMED){
-            throw new AppError(StatusCodes.BAD_REQUEST, 'Parcel has already been confirmed.')
+            throw new AppError(StatusCodes.BAD_REQUEST, 'Parcel has already been confirmed by the receiver.')
         }
 
         
@@ -363,41 +465,91 @@ const confirmedDelivery  = async (parcelId:string, decodedUser:JwtPayload) => {
 
 
 
-const deliveryHistory = async (decodedUser:JwtPayload) => {
+const deliveryHistory = async (decodedUser:JwtPayload, allQuery:Record<string, string>)  => {
+
     const user = await User.findById(decodedUser.userId);
 
     if(!user) {
         throw new AppError(StatusCodes.UNAUTHORIZED, 'User not found.');
     }
-    let deliveredParcel;
+    if (user.isActive === IsActive.BLOCKED)
+    throw new AppError(StatusCodes.BAD_REQUEST, 'User is blocked.');
 
-    if(user.role === Role.RECEIVER) {
-        deliveredParcel = await Parcel.find({
-            receiverEmail: user.email,
-            currentStatus: { $in: [ParcelStatus.DELIVERED, ParcelStatus.CONFIRMED] },
-        });
-    } else if (user.role === Role.SENDER ) {
-        deliveredParcel = await Parcel.find({
-            senderId: user._id,
-            currentStatus: { $in: [ParcelStatus.DELIVERED, ParcelStatus.CONFIRMED, ParcelStatus.CANCELLED, ParcelStatus.APPROVED, ParcelStatus.IN_TRANSIT] },
-        });
-    } else {
-        throw new AppError(StatusCodes.FORBIDDEN, 'Only sender or receiver can view delivery history.');
-    }
+  
+  const query: Record<string, any> = { isDeleted: { $ne: true } };
 
-    if (!deliveredParcel.length) {
-    return {
-      statusCode: StatusCodes.OK,
-      success: true,
-      message:
-        user.role === Role.RECEIVER
-          ? "No delivered or confirmed parcels found for this receiver."
-          : "Parcel is already pending!",
-      data: [],
+  if (user.role === Role.RECEIVER) {
+    query.receiverEmail = user.email;
+    query.currentStatus = {
+      $in: [ParcelStatus.DELIVERED, ParcelStatus.CONFIRMED, ParcelStatus.CANCELLED],
     };
+  } else if (user.role === Role.SENDER) {
+    query.senderId = user._id;
+    query.currentStatus = {
+      $in: [
+        ParcelStatus.DELIVERED,
+        ParcelStatus.CONFIRMED,
+        ParcelStatus.CANCELLED,
+        ParcelStatus.APPROVED,
+        ParcelStatus.IN_TRANSIT,
+      ],
+    };
+  } else {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      'Only sender or receiver can view delivery history.'
+    );
   }
 
-    return deliveredParcel;
+ 
+  if (allQuery.searchTrim) {
+    const regex = new RegExp(allQuery.searchTrim, 'i');
+
+    let senderIds: string[] = [];
+    if (user.role === Role.RECEIVER) {
+      const matchedSenders = await User.find({ email: { $regex: regex } }, { _id: 1 });
+      senderIds = matchedSenders.map(u => u._id.toString());
+    }
+
+    query.$or = [
+      { trackingId: regex },
+      { 'parcelDetails.address': regex },
+      { 'parcelDetails.phone': regex },
+      { 'parcelDetails.note': regex },
+      { currentStatus: regex },
+      ...(senderIds.length > 0 ? [{ senderId: { $in: senderIds } }] : []),
+    ];
+  }
+
+ 
+  const page = Number(allQuery.page) || 1;
+  const limit = Number(allQuery.limit) || 10;
+  const skip = (page - 1) * limit;
+
+
+  const [data, total] = await Promise.all([
+    Parcel.find(query)
+      .populate('senderId', 'name email picture')
+      .populate('statusHistory.updatedBy', 'role -_id')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Parcel.countDocuments(query),
+  ]);
+
+ 
+  const meta = {
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+
+    return{
+        data, meta,
+    };
+
+   
 };
 
 

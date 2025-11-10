@@ -6,6 +6,8 @@ import bcryptjs from 'bcryptjs';
 import { envVars } from '../../config/env';
 import { JwtPayload } from 'jsonwebtoken';
 import { QueryBuilder } from '../../utils/QueryBuilder';
+import { deleteImageFromCLoudinary } from '../../config/cloudinary.config';
+import { userSearchableFields } from '../../constants';
 
 
 
@@ -62,9 +64,16 @@ const updateUser = async (userId:string,payload:Partial<IUser>,decodedUser: JwtP
             if(decodedUser.role !== Role.ADMIN){
                 throw new AppError(StatusCodes.FORBIDDEN, 'Only admin can update password');
             }
+
+
+
             const hashedPassword = await bcryptjs.hash(payload.password, envVars.BCRYPT_SALT_ROUND);
             payload.password = hashedPassword;
         }
+
+   if (payload.picture && isUserExit.picture) {
+      await deleteImageFromCLoudinary(isUserExit.picture)
+    }
         const newUpdatedUser = await User.findByIdAndUpdate(userId, payload,{
             new:true,
             runValidators:true,
@@ -87,9 +96,12 @@ const updateUserProfile = async(userId:string, payload:Partial<IUser>, decodedUs
     if(payload.password){
         throw new AppError(StatusCodes.BAD_REQUEST, 'You are not allowed to update password here!');
     }
-    if(payload.role){
-        throw new AppError(StatusCodes.BAD_REQUEST, 'Only admin can update user roles.');
-    }
+     if (payload.role === 'ADMIN') {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      'You cannot Update your role into admin. Only admins can update user roles.'
+    );
+  }
     const newUpdatedProfile = await User.findByIdAndUpdate(userId, payload, {
         new:true,
         runValidators:true,
@@ -108,7 +120,8 @@ const getAllUser = async (decodedUser:JwtPayload, query: Record<string, string>)
     const users = User.find({role: {$in: [Role.RECEIVER, Role.SENDER]},  });
 
     const queryBuilder = new QueryBuilder(users, query);
-    const allUser = queryBuilder.filter().paginate();
+    const allUser = queryBuilder.search(userSearchableFields).filter().paginate();
+    
     const [data, meta] = await Promise.all([
         allUser.build().exec(),
         queryBuilder.getMeta(),
@@ -119,6 +132,7 @@ const getAllUser = async (decodedUser:JwtPayload, query: Record<string, string>)
         meta
     };
 };
+
 
 export const userServices = {
     createUser,

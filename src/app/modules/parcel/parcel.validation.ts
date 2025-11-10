@@ -27,7 +27,7 @@ export const updateParcelZodSchema = z.object({
                   .nonempty('Receiver email is required')
                   .email('Invalid email')
                   .optional(),
-    ParcelDetails:z.object({
+    parcelDetails:z.object({
         address:z.string().nonempty('Address is required').optional(),
         phone:z.string().nonempty('Phone number is required').optional(),
         weight:z.number().positive('Weight must be positive').optional(),
@@ -35,8 +35,9 @@ export const updateParcelZodSchema = z.object({
     }).optional(),
     fee:z
         .number()
-        .min(1, 'Fee is required')
-        .optional(),              
+        .min(1, 'Fee is required').optional(),
+    
+  currentStatus: z.string().optional()           
 });
 
 const ParcelStatusValues = Object.values(ParcelStatus) as [string, ...string[]];

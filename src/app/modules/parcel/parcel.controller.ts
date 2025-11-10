@@ -92,7 +92,8 @@ const getAParcel = catchAsync(async (req:Request, res:Response, next:NextFunctio
 
 const receiverIncomingParcels = catchAsync(async(req:Request, res:Response, next:NextFunction) => {
     const decodedUser = req.user;
-    const incomingParcel = await parcelService.receiverIncomingParcels(decodedUser as JwtPayload);
+    const query = req.query;
+    const incomingParcel = await parcelService.receiverIncomingParcels(decodedUser as JwtPayload, query as Record<string, string>);
 
     sendResponse(res, {
         statusCode:StatusCodes.OK,
@@ -123,7 +124,7 @@ const confirmedDelivery = catchAsync(async (req:Request, res:Response, next:Next
 
 const deliveryHistory = catchAsync(async (req:Request, res:Response, next:NextFunction) => {
     const decodedUser = req.user;
-    const history = await parcelService.deliveryHistory(decodedUser as JwtPayload);
+    const history = await parcelService.deliveryHistory(decodedUser as JwtPayload, req.query as Record<string, string>);
 
     sendResponse(res, {
         statusCode:StatusCodes.OK,
@@ -151,13 +152,19 @@ const updateParcelStatus = catchAsync(async (req: Request, res:Response, next:Ne
 
 
 const trackParcel = catchAsync(async (req:Request, res:Response, next:NextFunction) => {
-    const parcel = await Parcel.findOne({
-        trackingId:req.params.trackingId,
-    }).select('currentStatus parcelDetails  fee  -_id');
+    const trackId = req.params.trackingId;
+    const match = await Parcel.findOne({trackingId:trackId});
 
-    if(!parcel){
-        throw new AppError(StatusCodes.NOT_FOUND, 'Parcel not found with this tracking Id!');
+    if(!match){
+        throw new AppError(StatusCodes.NOT_FOUND, 'Parcel not found with this tracking ID!');
     }
+
+    const parcel = await Parcel.findOne({
+      trackingId: req.params.trackingId,
+    })
+      .select('-trackingId -isDeleted')
+      .populate('senderId', 'name email phone -_id')
+      .populate('statusHistory.updatedBy', 'role -_id');
 
     sendResponse(res, {
         statusCode:StatusCodes.OK,

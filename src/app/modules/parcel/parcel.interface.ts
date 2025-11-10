@@ -28,6 +28,7 @@ export interface IParcel {
         weight:number;
         note?:string;
     };
+    
     fee?:number;
     currentStatus:ParcelStatus;
     statusHistory:IStatusHistory[];
