@@ -327,7 +327,7 @@ const getAParcel = async (parcelId:string, decodedUser:JwtPayload) => {
     total,
     page,
     limit,
-    totalPages: Math.ceil(total / limit),
+    totalPage: Math.ceil(total / limit),
   };
 
   return { data, meta };
@@ -400,7 +400,7 @@ const receiverIncomingParcels = async (decodedUser:JwtPayload, allQuery: Record<
     total,
     page,
     limit,
-    totalPages: Math.ceil(total / limit),
+    totalPage: Math.ceil(total / limit),
   };
 
  return {
@@ -513,6 +513,7 @@ const deliveryHistory = async (decodedUser:JwtPayload, allQuery:Record<string, s
 
     query.$or = [
       { trackingId: regex },
+      { senderEmail: regex },
       { 'parcelDetails.address': regex },
       { 'parcelDetails.phone': regex },
       { 'parcelDetails.note': regex },
@@ -542,7 +543,7 @@ const deliveryHistory = async (decodedUser:JwtPayload, allQuery:Record<string, s
     total,
     page,
     limit,
-    totalPages: Math.ceil(total / limit),
+    totalPage: Math.ceil(total / limit),
   };
 
     return{

@@ -238,7 +238,7 @@ const getAllParcels = (decodedUser, allQuery) => __awaiter(void 0, void 0, void 
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        totalPage: Math.ceil(total / limit),
     };
     return { data, meta };
 });
@@ -288,7 +288,7 @@ const receiverIncomingParcels = (decodedUser, allQuery) => __awaiter(void 0, voi
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        totalPage: Math.ceil(total / limit),
     };
     return {
         data,
@@ -371,6 +371,7 @@ const deliveryHistory = (decodedUser, allQuery) => __awaiter(void 0, void 0, voi
         }
         query.$or = [
             { trackingId: regex },
+            { senderEmail: regex },
             { 'parcelDetails.address': regex },
             { 'parcelDetails.phone': regex },
             { 'parcelDetails.note': regex },
@@ -394,7 +395,7 @@ const deliveryHistory = (decodedUser, allQuery) => __awaiter(void 0, void 0, voi
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        totalPage: Math.ceil(total / limit),
     };
     return {
         data, meta,
