@@ -20,13 +20,7 @@ const getParcelsStats = (decodedUser) => __awaiter(void 0, void 0, void 0, funct
     const parcelStats = yield parcel_model_1.Parcel.aggregate([
         {
             $group: {
-                _id: {
-                    $cond: [
-                        { $in: ['$currentStatus', ['DELIVERED', 'CONFIRMED']] },
-                        'COMPLETED',
-                        '$currentStatus',
-                    ],
-                },
+                _id: '$currentStatus',
                 count: { $sum: 1 },
             },
         },

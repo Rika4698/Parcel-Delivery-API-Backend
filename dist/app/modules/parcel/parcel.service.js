@@ -343,25 +343,36 @@ const deliveryHistory = (decodedUser, allQuery) => __awaiter(void 0, void 0, voi
     const query = { isDeleted: { $ne: true } };
     if (user.role === user_interface_1.Role.RECEIVER) {
         query.receiverEmail = user.email;
-        query.currentStatus = {
-            $in: [parcel_interface_1.ParcelStatus.DELIVERED, parcel_interface_1.ParcelStatus.CONFIRMED, parcel_interface_1.ParcelStatus.CANCELLED],
-        };
+        if (allQuery.currentStatus) {
+            query.currentStatus = allQuery.currentStatus;
+        }
+        else {
+            query.currentStatus = {
+                $in: [parcel_interface_1.ParcelStatus.DELIVERED, parcel_interface_1.ParcelStatus.CONFIRMED, parcel_interface_1.ParcelStatus.CANCELLED],
+            };
+        }
     }
     else if (user.role === user_interface_1.Role.SENDER) {
         query.senderId = user._id;
-        query.currentStatus = {
-            $in: [
-                parcel_interface_1.ParcelStatus.DELIVERED,
-                parcel_interface_1.ParcelStatus.CONFIRMED,
-                parcel_interface_1.ParcelStatus.CANCELLED,
-                parcel_interface_1.ParcelStatus.APPROVED,
-                parcel_interface_1.ParcelStatus.IN_TRANSIT,
-            ],
-        };
+        if (allQuery.currentStatus) {
+            query.currentStatus = allQuery.currentStatus;
+        }
+        else {
+            query.currentStatus = {
+                $in: [
+                    parcel_interface_1.ParcelStatus.DELIVERED,
+                    parcel_interface_1.ParcelStatus.CONFIRMED,
+                    parcel_interface_1.ParcelStatus.CANCELLED,
+                    parcel_interface_1.ParcelStatus.APPROVED,
+                    parcel_interface_1.ParcelStatus.IN_TRANSIT,
+                ],
+            };
+        }
     }
     else {
         throw new AppError_1.default(http_status_codes_1.StatusCodes.FORBIDDEN, 'Only sender or receiver can view delivery history.');
     }
+    // Search functionality
     if (allQuery.searchTrim) {
         const regex = new RegExp(allQuery.searchTrim, 'i');
         let senderIds = [];
@@ -398,7 +409,8 @@ const deliveryHistory = (decodedUser, allQuery) => __awaiter(void 0, void 0, voi
         totalPage: Math.ceil(total / limit),
     };
     return {
-        data, meta,
+        data,
+        meta,
     };
 });
 const updateParcelStatus = (parcelId, payload, decodedUser) => __awaiter(void 0, void 0, void 0, function* () {
