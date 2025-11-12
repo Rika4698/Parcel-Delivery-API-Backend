@@ -7,20 +7,14 @@ const getParcelsStats = async (decodedUser: JwtPayload) => {
   if (!isUserAdmin) {
     throw new Error('Unauthorized access');
   }
-  const parcelStats = await Parcel.aggregate([
-    {
-      $group: {
-        _id: {
-          $cond: [
-            { $in: ['$currentStatus', ['DELIVERED', 'CONFIRMED']] },
-            'COMPLETED',
-            '$currentStatus',
-          ],
-        },
-        count: { $sum: 1 },
-      },
+const parcelStats = await Parcel.aggregate([
+  {
+    $group: {
+      _id: '$currentStatus', 
+      count: { $sum: 1 },    
     },
-  ]);
+  },
+]);
 
 
   const dailyTrend = await Parcel.aggregate([
