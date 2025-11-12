@@ -5,7 +5,7 @@
 A role-based Parcel Delivery API system built with **Node.js**, **Express.js**, **TypeScript**, and **MongoDB** using **Mongoose**.  This project provides a robust foundation for managing parcel, user roles and real-time status tracking.
 
 ---
-### Live Link: https://parcel-delivery-api-backend.vercel.app/
+### Live Link: https://parcel-delivery-api-backend.onrender.com/
 
 ---
 
@@ -172,18 +172,28 @@ To get the project running locally, follow these steps:
 <br/>
 
 ```
-src/
-├── app/
-│   ├── modules/
-│   │   ├── auth/         # Authentication logic (register, login, tokens)
-│   │   ├── parcel/       # Parcel management (create, track, update)
-│   │   └── user/         # User management (roles, status)
-│   ├── middlewares/      # Express middlewares (auth, validation, error handling)
-│   ├── routes/           # API route definitions
-│   └── utils/            # Utility functions (catchAsync, AppError)
-├── config/               # Environment variables and configuration
-├── server.ts             # Main server entry point
-└── app.ts                # Express application setup
+              
+ src/
+  ├─ app/
+  │  ├─ middlewares/  # Express middlewares (auth, validation, error handling)
+  │  │ 
+  │  ├─ modules/ 
+  │  │  ├─ auth/      # Authentication logic (register, login, tokens)
+  │  │  ├─ contact/   # Public user message view and response
+  │  │  ├─ parcel/    # Parcel management (create, track, update)
+  │  │  │ 
+  │  │  ├─ stats/     # Dashboard analytics(parcel stats, user stats)
+  │  │  │  
+  │  │  └─ user/      # User management (roles, status)
+  │  │     
+  │  ├─ routes/       # API route definitions
+  │  │  
+  │  └── utils/       # Utility functions (catchAsync, AppError)
+  ├── config/         # Environment variables and configuration
+  ├─ app.ts           # Express application setup
+  └─ server.ts        # Main server entry point
+
+
 ```
 
 ---
@@ -404,6 +414,15 @@ When you fetch a parcel, the `statusHistory` array contain all the details of ea
     ]
 }
 ```
+
+---
+## 🔗 Related Links
+
+- **Backend Live Link:** https://parcel-delivery-api-backend.onrender.com/
+- **Frontend Live Demo:** https://delivo-beryl.vercel.app/
+- **Backend GitHub Repository:** https://github.com/Rika4698/Parcel-Delivery-API-Backend
+- **Frontend GitHub Repository:** https://github.com/Rika4698/Parcel-Delivery-API-Frontend
+
 
 ---
 <br/>
