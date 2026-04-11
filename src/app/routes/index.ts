@@ -7,31 +7,34 @@ import { contactRoute } from "../modules/contact/contact.route";
 
 
 
+
 export const router = Router();
 
 const routes = [
-    {
-       path:'/auth',
-       route:authRoute,
-    },
-    {
-        path:'/user',
-        route:userRoute,
-    },
-    {
-        path:'/parcels',
-        route:parcelRouter,
-    },
-    {
+  {
+    path: '/auth',
+    route: authRoute,
+  },
+  {
+    path: '/user',
+    route: userRoute,
+  },
+  {
+    path: '/parcels',
+    route: parcelRouter,
+  },
+  {
     path: '/stats',
     route: statsRoute,
   },
+  
   {
     path: '/contact',
     route: contactRoute,
   },
+
 ];
 
 routes.forEach(route => {
-    router.use(route.path, route.route);
+  router.use(route.path, route.route);
 });

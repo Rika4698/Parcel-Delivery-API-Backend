@@ -20,12 +20,11 @@ const env_1 = require("../config/env");
 const user_model_1 = require("../modules/user/user.model");
 const user_interface_1 = require("../modules/user/user.interface");
 const checkAuth = (...authRole) => (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _a, _b, _c;
     try {
-        let accessToken = req.cookies.accessToken;
-        if ((_a = req === null || req === void 0 ? void 0 : req.body) === null || _a === void 0 ? void 0 : _a.token) {
-            accessToken = req.body.token;
-        }
+        const accessToken = ((_a = req.cookies) === null || _a === void 0 ? void 0 : _a.accessToken) ||
+            ((_b = req.headers.authorization) === null || _b === void 0 ? void 0 : _b.split(" ")[1]) ||
+            ((_c = req.body) === null || _c === void 0 ? void 0 : _c.token);
         if (!accessToken) {
             throw new AppError_1.default(http_status_codes_1.StatusCodes.FORBIDDEN, 'No Token Received');
         }

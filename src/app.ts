@@ -11,11 +11,12 @@ import cookieParser from "cookie-parser";
 
 
 const app = express();
+app.set('trust proxy', true);
 
 app.use(expressSession({
-    secret:envVars.EXPRESS_SESSION_SECRET,
-    resave:false,
-    saveUninitialized:false,
+    secret: envVars.EXPRESS_SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
 })
 );
 
@@ -25,20 +26,35 @@ app.use(cookieParser());
 
 
 app.use(express.json());
-app.set('trust proxy',1);
-app.use(express.urlencoded({extended:true}));
+
+app.use(express.urlencoded({ extended: true }));
+const allowedOrigins = [envVars.FRONTEND_URL, "http://localhost:5173", "http://localhost:3000"];
+
 app.use(
     cors({
-        origin:[envVars.FRONTEND_URL, "http://localhost:5173"],
-        credentials:true,
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true);
+
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+
+            // Allow dynamic Vercel preview deployments
+            if (origin.endsWith('.vercel.app')) {
+                return callback(null, true);
+            }
+
+            callback(new Error('Not allowed by CORS'));
+        },
+        credentials: true,
     })
 );
 
 app.use("/api/v1", router);
 
-app.get("/", (req:Request, res:Response)=>{
+app.get("/", (req: Request, res: Response) => {
     res.status(200).json({
-        message:'Welcome to Parcel Delivery API',
+        message: 'Welcome to Parcel Delivery API',
     });
 
 });

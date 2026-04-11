@@ -427,4 +427,17 @@ When you fetch a parcel, the `statusHistory` array contain all the details of ea
 ---
 <br/>
 
+
+
+## 👤 Author & Contact
+
+**Name: Sharmin Akter Reka**
+<br/>
+<br/>
+**Role: Frontend Developer**
+<br/>
+**Portfolio: https://sharmin-rika-portfolio.vercel.app/**
+
+---
+
 *Thanks for exploring the Parcel Delivery API!*
